@@ -1,5 +1,14 @@
 # Lumora - AI-Powered Content Creation Platform
 
+[![Production Ready](https://img.shields.io/badge/status-production%20ready-brightgreen)](https://github.com/your-org/lumora)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-Proprietary-red)](./LICENSE)
+
+> **Quick Start:** See [QUICK_START.md](./QUICK_START.md) for 10-minute setup guide
+> **Deployment:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment
+> **PRD:** See [LUMORA_TECHNICAL_PRD.md](./LUMORA_TECHNICAL_PRD.md) for full specifications
+
 ## 🚀 Overview
 
 Lumora is a comprehensive AI content creation platform that enables users to generate professional images, videos, and audio using multiple state-of-the-art AI models. Built with a freemium model, attribution analytics, and white-label capabilities.
