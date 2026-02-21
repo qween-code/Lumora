@@ -6,29 +6,67 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { User, CreditCard, Key, Bell, Shield } from "lucide-react";
+import { User, CreditCard, Key, Bell, Shield, ExternalLink, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const handleUpdateProfile = async () => {
     setLoading(true);
     try {
-      // TODO: Implement profile update
+      const response = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Update failed");
+      }
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Update failed",
-        description: "Could not update profile",
+        description: error.message || "Could not update profile",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    try {
+      const response = await fetch("/api/stripe/portal", {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to open billing portal");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Billing portal unavailable",
+        description: error.message || "Could not open billing portal",
+      });
+    } finally {
+      setPortalLoading(false);
     }
   };
 
@@ -83,7 +121,14 @@ export default function SettingsPage() {
             </div>
 
             <Button onClick={handleUpdateProfile} disabled={loading}>
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </div>
         </div>
@@ -103,8 +148,8 @@ export default function SettingsPage() {
                 <p className="font-medium">Current Plan</p>
                 <p className="text-sm text-muted-foreground">FREE</p>
               </div>
-              <Button variant="outline" size="sm">
-                Upgrade
+              <Button variant="outline" size="sm" asChild>
+                <a href="/dashboard/pricing">Upgrade</a>
               </Button>
             </div>
 
@@ -113,16 +158,34 @@ export default function SettingsPage() {
                 <p className="font-medium">Credits Remaining</p>
                 <p className="text-sm text-muted-foreground">100 / 100</p>
               </div>
-              <Button variant="outline" size="sm">
-                Buy Credits
+              <Button variant="outline" size="sm" asChild>
+                <a href="/dashboard/pricing">Buy Credits</a>
               </Button>
             </div>
 
             <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <Button variant="outline" className="w-full justify-start">
-                Add Payment Method
+              <Label>Manage Subscription</Label>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleManageBilling}
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Opening portal...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open Billing Portal
+                  </>
+                )}
               </Button>
+              <p className="text-xs text-muted-foreground">
+                Update payment method, view invoices, or cancel subscription
+              </p>
             </div>
           </div>
         </div>

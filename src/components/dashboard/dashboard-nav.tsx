@@ -14,6 +14,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  History,
+  CreditCard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -51,6 +53,11 @@ const navItems = [
     ],
   },
   {
+    title: "History",
+    href: "/dashboard/history",
+    icon: History,
+  },
+  {
     title: "Templates",
     href: "/dashboard/templates",
     icon: LayoutTemplate,
@@ -59,6 +66,11 @@ const navItems = [
     title: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Pricing",
+    href: "/dashboard/pricing",
+    icon: CreditCard,
   },
   {
     title: "Settings",

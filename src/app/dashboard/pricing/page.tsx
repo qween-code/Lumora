@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Crown, Building2 } from "lucide-react";
+import { Check, Sparkles, Zap, Crown, Building2, Loader2 } from "lucide-react";
 import { TIER_CREDITS, TIER_PRICES } from "@/lib/constants";
+import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 const tiers = [
@@ -96,6 +98,41 @@ const tiers = [
 ];
 
 export default function PricingPage() {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  const handleUpgrade = async (tierName: string) => {
+    setLoadingTier(tierName);
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tier: tierName,
+          billingCycle,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade failed",
+        description: error.message || "Could not start checkout",
+      });
+    } finally {
+      setLoadingTier(null);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -105,17 +142,41 @@ export default function PricingPage() {
         </p>
       </div>
 
-      {/* Annual Discount Banner */}
-      <div className="rounded-lg bg-primary/10 border border-primary/20 p-4 text-center">
-        <p className="text-sm font-medium">
-          💰 Save 20% with annual billing on Creator and Pro plans
-        </p>
+      {/* Billing Toggle */}
+      <div className="flex items-center justify-center gap-4">
+        <button
+          onClick={() => setBillingCycle("monthly")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            billingCycle === "monthly"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Monthly
+        </button>
+        <button
+          onClick={() => setBillingCycle("annual")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            billingCycle === "annual"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Annual
+          <span className="ml-2 text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">
+            Save 20%
+          </span>
+        </button>
       </div>
 
       {/* Pricing Cards */}
       <div className="grid gap-6 lg:grid-cols-4">
         {tiers.map((tier) => {
           const Icon = tier.icon;
+          const displayPrice = billingCycle === "annual" && tier.annualPrice
+            ? tier.annualPrice
+            : tier.price;
+
           return (
             <div
               key={tier.name}
@@ -141,16 +202,22 @@ export default function PricingPage() {
                     <h3 className="text-lg font-bold">{tier.name}</h3>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    {typeof tier.price === "number" ? (
+                    {typeof displayPrice === "number" ? (
                       <>
-                        <span className="text-3xl font-bold">${tier.price}</span>
+                        <span className="text-3xl font-bold">${displayPrice}</span>
                         <span className="text-muted-foreground">/month</span>
                       </>
                     ) : (
-                      <span className="text-3xl font-bold">{tier.price}</span>
+                      <span className="text-3xl font-bold">{displayPrice}</span>
                     )}
                   </div>
-                  {tier.annualPrice && (
+                  {billingCycle === "annual" && tier.annualPrice && (
+                    <p className="text-sm text-muted-foreground">
+                      <span className="line-through">${tier.price}/mo</span>
+                      {" "}billed as ${tier.annualPrice * 12}/year
+                    </p>
+                  )}
+                  {billingCycle === "monthly" && tier.annualPrice && (
                     <p className="text-sm text-muted-foreground">
                       or ${tier.annualPrice}/mo billed annually
                     </p>
@@ -175,7 +242,7 @@ export default function PricingPage() {
                   <ul className="space-y-2 pt-4 border-t">
                     {tier.limitations.map((limitation, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="shrink-0">•</span>
+                        <span className="shrink-0">-</span>
                         <span>{limitation}</span>
                       </li>
                     ))}
@@ -198,8 +265,17 @@ export default function PricingPage() {
                     <Button
                       className="w-full"
                       variant={tier.popular ? "default" : "outline"}
+                      onClick={() => handleUpgrade(tier.name)}
+                      disabled={loadingTier === tier.name}
                     >
-                      {tier.cta}
+                      {loadingTier === tier.name ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Redirecting...
+                        </>
+                      ) : (
+                        tier.cta
+                      )}
                     </Button>
                   )}
                 </div>

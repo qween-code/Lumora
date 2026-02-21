@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { prompt, model, duration, aspect_ratio } = await request.json();
+    const { prompt, model, duration, voice } = await request.json();
 
     if (!prompt || !model) {
       return NextResponse.json(
@@ -27,15 +27,15 @@ export async function POST(request: NextRequest) {
     const result = await executeGeneration({
       supabase,
       userId: user.id,
-      type: "video",
+      type: "audio",
       model,
       prompt,
-      params: { duration, aspect_ratio },
+      params: { duration, voice },
     });
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error("Video generation error:", error);
+    console.error("Audio generation error:", error);
     const status = error instanceof GenerationError ? error.statusCode : 500;
     return NextResponse.json(
       { error: error.message || "Generation failed" },
